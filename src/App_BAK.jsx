@@ -3,18 +3,17 @@ import { useState, useEffect } from "react";
 export default function App() {
   console.log("🟢 App.jsx is running latest version");
 
-  const [prompt, setPrompt] = useState("Beautiful Girl");
+  const [prompt, setPrompt] = useState("girl");
   const [mainImage, setMainImage] = useState(null);
   const [variations, setVariations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTags, setActiveTags] = useState(new Set());
-  const [batchCount, setBatchCount] = useState(1);
-  const [showBatchPanel, setShowBatchPanel] = useState(false);
   const [defaultTags, setDefaultTags] = useState(() => {
     return localStorage.getItem("defaultTags") ||
       "vibrant colours, dslr-evel detail, realistic hair, photoreal skin pores, canon eos r5, soft background bokeh, nikon, f1.4, pretty, beautiful, detailed face, real face, stunning, pale skin, shaven, detailed skin";
   });
   const [negativePrompt, setNegativePrompt] = useState("(worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, watermark, extra arms, CGI, 3d, anime, cartoon, plastic skin, shiny skin, low quality, blurry, extra limbs, extra arms, bad anatomy, ugly, plastic breasts, wet, hairy, streaks, streaky");
+
   const [showDevPanel, setShowDevPanel] = useState(false);
 
   useEffect(() => {
@@ -63,12 +62,6 @@ export default function App() {
         console.log("🎲 Random seed set:", randomSeed);
       }
 
-      const batchNodeId = "4"; 
-      if (workflow[batchNodeId]?.inputs) {
-        workflow[batchNodeId].inputs.batch_size = batchCount;
-        console.log("📦 Batch count set:", batchCount);
-      }
-
       const proxyUrl = "http://localhost:3001/generate-image";
       const res = await fetch(proxyUrl, {
         method: "POST",
@@ -83,40 +76,34 @@ export default function App() {
       if (!queue_id) throw new Error("❌ No queue_id returned");
 
       const serverUrl = "http://localhost:3001";
-      
       let imageURL = null;
-
-      let batchImages = []; 
 
       for (let i = 0; i < 60; i++) {
         const histRes = await fetch(`${serverUrl}/history/${queue_id}`);
         const histData = await histRes.json();
 
         const outputs = Object.values(histData[queue_id]?.outputs || {});
-        
         for (const output of outputs) {
           const images = output?.images;
-          if (Array.isArray(images) && images.length > 0) {
-            const urls = images.map((img) => `${serverUrl}/view?filename=${img.filename}`);
-            batchImages.push(...urls);
+          if (images?.[0]?.filename) {
+            const filename = images[0].filename;
+            console.log("🖼️ Found image filename:", filename);
+            imageURL = `${serverUrl}/view?filename=${filename}`;
+            break;
           }
         }
 
-        if (batchImages.length > 0) {
-          break;
-        }
-
+        if (imageURL) break;
         await new Promise((r) => setTimeout(r, 1000));
       }
 
-      if (batchImages.length > 0) {
-        console.log("✅ Batch images:", batchImages);
-        setMainImage(batchImages[0]);
-        setVariations((prev) => [...batchImages, ...prev]);
+      if (imageURL) {
+        console.log("✅ Image URL:", imageURL);
+        setMainImage(imageURL);
+        setVariations((prev) => [imageURL, ...prev]);
       } else {
-        alert("No images returned from ComfyUI after polling.");
+        alert("No image returned from ComfyUI after polling.");
       }
-
     } catch (err) {
       console.error("❌ Error in handleGenerate:", err);
       alert("Failed to generate image.");
@@ -151,7 +138,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-200">
       <div className="w-full bg-gray-800 px-6 py-4 flex items-center gap-4 relative">
-        <h1 className="text-4xl font-bold text-white whitespace-nowrap">Kissme.ai</h1>
+        <h1 className="text-4xl font-bold text-white whitespace-nowrap">AI Image Generator</h1>
         <textarea
           rows={1}
           value={prompt}
@@ -170,7 +157,7 @@ export default function App() {
 
       <button
         onClick={() => setShowBatchPanel(prev => !prev)}
-        className="absolute right-4 top-[38px] transform -translate-y-1/2 text-white hover:text-gray-300 settings-icon"
+        className="absolute right-4 top-[4%] transform -translate-y-1/2 text-white hover:text-gray-300 settings-icon"
         title="Batch Settings"
       >
         <svg xmlns="http://www.w3.org/2000/svg"
@@ -190,27 +177,8 @@ export default function App() {
         </svg>
       </button>
 
-      {showBatchPanel && (
-        <div className="absolute right-4 top-[90px] bg-gray-700 shadow-lg border border-gray-300 rounded p-3 z-50 text-sm w-48">
-          <label className="block mb-2 font-semibold text-white">Iterations</label>
-          <input
-            type="range"
-            min={1}
-            max={5}
-            step={1}
-            value={batchCount}
-            onChange={(e) => setBatchCount(Number(e.target.value))}
-            className="w-full"
-          />
-          <div className="text-sm text-white mt-1 text-right">
-            {batchCount} image{batchCount > 1 ? "s" : ""}
-          </div>
-        </div>
-      )}
-
-
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-42 p-3 overflow-y-auto bg-gray-100">
+        <div className="w-42 p-3 overflow-y-auto">
           <h2 className="text-xl font-bold mb-4">Prompt Tags</h2>
           {Object.entries(tagCategories).map(([category, tags]) => (
             <div key={category} className="mb-4">
@@ -253,7 +221,8 @@ export default function App() {
           </div>
         </div>
         
-        <div className="w-48 p-3 overflow-y-auto bg-gray-100">
+        
+        <div className="w-24 p-3 overflow-y-auto">
           <h2 className="text-xl font-bold mb-4">Gallery</h2>
           <div className="flex flex-col space-y-4">
             {variations.length === 0 ? (
@@ -264,7 +233,7 @@ export default function App() {
                   key={idx}
                   src={img}
                   alt={`variation-${idx}`}
-                  className="rounded-2xl cursor-pointer transition-transform duration-200 hover:scale-120 hover:-translate-x-2 hover:opacity-90 transform origin-right"
+                  className="rounded cursor-pointer hover:opacity-80"
                   onClick={() => setMainImage(img)}
                 />
               ))
@@ -283,7 +252,7 @@ export default function App() {
             className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none mb-2"
           />
         </div>
-      )}    
+      )}
 
       <button
         className="fixed bottom-8 right-6 z-50 text-sm text-white bg-indigo-700 px-3 py-1 rounded shadow-lg hover:bg-indigo-600"

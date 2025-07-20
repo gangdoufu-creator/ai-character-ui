@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const COMFY_API = 'https://ktjyi1ni1a1c52-8188.proxy.runpod.net';
+const COMFY_API = 'https://lxyku3tffobn8c-8188.proxy.runpod.net';
 
 // Forward prompt to ComfyUI
 app.post("/generate-image", async (req, res) => {
