@@ -84,7 +84,8 @@
   },
   "6": {
     "inputs": {
-      "filename_prefix": "ComfyUI",
+      "filename_prefix": "SexyLady",
+      "filename_delimiter": "_",
       "images": [
         "8",
         0

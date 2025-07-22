@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 
+
 export default function App() {
   console.log("🟢 App.jsx is running latest version");
 
@@ -10,6 +11,7 @@ export default function App() {
   const [activeTags, setActiveTags] = useState(new Set());
   const [batchCount, setBatchCount] = useState(1);
   const [showBatchPanel, setShowBatchPanel] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [defaultTags, setDefaultTags] = useState(() => {
     return localStorage.getItem("defaultTags") ||
       "vibrant colours, dslr-evel detail, realistic hair, photoreal skin pores, canon eos r5, soft background bokeh, nikon, f1.4, pretty, beautiful, detailed face, real face, stunning, pale skin, shaven, detailed skin";
@@ -19,19 +21,28 @@ export default function App() {
 
   const workflowConfigs = {
     image: {
-      file: "/Real8.json",
+      file: "/japaneseStyleRealistic_v20.json",
       promptNode: "14",
       negativeNode: "2",
       seedNode: "3",
       batchNode: "4",
+      filename: "17"
     },
     video: {
-      file: "/wan_Image2Video.json",
+      file: "/wan_Image2VideoFAST.json",
       promptNode: "105",
-      negativeNode: "115",
-      seedNode: "108"
+      negativeNode: "107",
+      seedNode: "108",
+      imageInputNode: "164",
     },
   };
+
+function extractFilename(url) {
+  const params = new URL(url).searchParams;
+  return params.get("filename");
+}
+
+
 
   useEffect(() => {
     const toggleDevPanel = (e) => {
@@ -65,6 +76,7 @@ export default function App() {
       return newTags;
     });
   };
+  console.log("🖼️ mainImage value:", mainImage);
 
   const handleGenerate = async (type = "image") => {
     if (!prompt.trim()) return;
@@ -87,14 +99,12 @@ export default function App() {
 
       if (config.promptNode && workflow[config.promptNode]?.inputs) {
         workflow[config.promptNode].inputs.text = finalPrompt;
-        console.log("✏️ Prompt injected into node", config.promptNode, ":", finalPrompt);
       } else {
         throw new Error(`❌ Node ${config.promptNode} not found or missing inputs`);
       }
 
       if (config.negativeNode && workflow[config.negativeNode]?.inputs) {
         workflow[config.negativeNode].inputs.text = negativePrompt;
-        console.log("🚫 Negative Prompt:", negativePrompt);
       }
 
       if (config.seedNode && workflow[config.seedNode]?.inputs) {
@@ -102,11 +112,28 @@ export default function App() {
         workflow[config.seedNode].inputs.seed = randomSeed;
         console.log("🎲 Random seed set:", randomSeed);
       }
+      
+      if (type === "video" && config.imageInputNode && workflow[config.imageInputNode]?.inputs) {
+        const imageFilename = extractFilename(mainImage);
+        console.log("🖼️ TRIINH", config.imageInputNode, ":", imageFilename + " [output]");
+        workflow[config.imageInputNode].inputs.image = imageFilename + " [output]";      
+      }
 
       if (type === "image" && config.batchNode && workflow[config.batchNode]?.inputs) {
         workflow[config.batchNode].inputs.batch_size = batchCount;
         console.log("📦 Batch count set:", batchCount);
       }
+
+      if (type === "video") {
+        const filename = extractFilename(mainImage);
+        console.log("📤 Sending move request for:", filename);
+        await fetch("http://localhost:3001/move-to-input", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename }),
+        });
+      }
+
 
       const proxyUrl = "http://localhost:3001/generate-image";
       const res = await fetch(proxyUrl, {
@@ -124,11 +151,12 @@ export default function App() {
       const serverUrl = "http://localhost:3001";
       let batchMedia = [];
 
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 1999; i++) {
         const histRes = await fetch(`${serverUrl}/history/${queue_id}`);
         const histData = await histRes.json();
         const outputs = Object.values(histData[queue_id]?.outputs || {});
 
+        
         for (const output of outputs) {
           if (output?.images) {
             const urls = output.images.map((img) => `${serverUrl}/view?filename=${img.filename}`);

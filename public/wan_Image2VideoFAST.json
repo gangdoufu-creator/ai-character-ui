@@ -1,7 +1,7 @@
 {
   "68": {
     "inputs": {
-      "fps": 16,
+      "fps": 9.86474609375,
       "images": [
         "119",
         0
@@ -17,6 +17,7 @@
       "filename_prefix": "video/ComfyUI",
       "format": "auto",
       "codec": "auto",
+      "video-preview": "",
       "video": [
         "68",
         0
@@ -27,18 +28,9 @@
       "title": "Save Video"
     }
   },
-  "73": {
-    "inputs": {
-      "image": "elfwarriorfull.jpg"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "Load Image"
-    }
-  },
   "105": {
     "inputs": {
-      "text": "Her eyes are half-lidded with intensity, lips slightly parted. The camera is static remains on character but pulls out wide.",
+      "text": "A sensual elven warrior princess performing a slow, erotic dance by moonlight, Her toned body sways seductively, hips rolling with rhythm, delicate chains swaying with each movement. Her eyes are half-lidded with intensity, lips slightly parted. The camera is static remains on character but pulls out wide.",
       "clip": [
         "115",
         1
@@ -65,10 +57,10 @@
   "108": {
     "inputs": {
       "seed": 437066813964231,
-      "steps": 20,
+      "steps": 8,
       "cfg": 1,
-      "sampler_name": "uni_pc",
-      "scheduler": "simple",
+      "sampler_name": "euler",
+      "scheduler": "karras",
       "denoise": 1,
       "model": [
         "110",
@@ -96,7 +88,7 @@
     "inputs": {
       "width": 416,
       "height": 720,
-      "length": 81,
+      "length": 1,
       "batch_size": 1,
       "strength": 1.0000000000000002,
       "positive": [
@@ -112,7 +104,7 @@
         0
       ],
       "reference_image": [
-        "73",
+        "164",
         0
       ]
     },
@@ -213,6 +205,16 @@
     "class_type": "CLIPLoader",
     "_meta": {
       "title": "Load CLIP"
+    }
+  },
+  "164": {
+    "inputs": {
+      "image": "test_06.png [output]",
+      "refresh": "refresh"
+    },
+    "class_type": "LoadImageOutput",
+    "_meta": {
+      "title": "Load Image (from Outputs)"
     }
   }
 }
