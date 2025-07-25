@@ -2,14 +2,12 @@
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
-import fs from 'fs';
-import path from 'path';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const COMFY_API = 'https://lrkndlff2sfzkn-8188.proxy.runpod.net';
+const COMFY_API = 'https://eejlzegg6v6pm5-8188.proxy.runpod.net';  
 
 // Forward prompt to ComfyUI
 app.post("/generate-image", async (req, res) => {
@@ -69,18 +67,3 @@ app.get('/view', async (req, res) => {
 // ✅ Don't forget this!
 const PORT = 3001;
 app.listen(PORT, () => console.log(`✅ Proxy server running at http://localhost:${PORT}`));
-
-app.post('/move-to-input', async (req, res) => {
-  const { filename } = req.body;
-  const src = path.join('/workspace/ComfyUI/output', filename);
-  const dest = path.join('/workspace/ComfyUI/input', filename);
-
-  try {
-    fs.copyFileSync(src, dest);
-    console.log(`✅ Moved ${filename} to input folder`);
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error('❌ Failed to move file:', err);
-    res.status(500).json({ error: 'File move failed' });
-  }
-});

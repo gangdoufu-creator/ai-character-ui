@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-
+import { SlidersHorizontal } from "lucide-react";
+import CoverPage from "./pages/CoverPage";
 
 export default function App() {
   console.log("🟢 App.jsx is running latest version");
-
+  
+  const [showCover, setShowCover] = useState(true);
   const [prompt, setPrompt] = useState("Beautiful Lady");
   const [mainImage, setMainImage] = useState(null);
   const [variations, setVariations] = useState([]);
@@ -188,6 +190,12 @@ function extractFilename(url) {
     }
   };
 
+  if (showCover) {
+    return <CoverPage onSelectGirl={(presetPrompt) => {
+      setPrompt(presetPrompt);
+      setShowCover(false);
+    }} />;
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-200">
@@ -211,10 +219,10 @@ function extractFilename(url) {
 
       <button
         onClick={() => setShowBatchPanel(prev => !prev)}
-        className="absolute right-4 top-[38px] transform -translate-y-1/2 text-white hover:text-gray-300 settings-icon"
+        className="absolute right-5 top-[38px] transform -translate-y-1/2 text-white hover:text-gray-300 settings-icon"
         title="Batch Settings"
       >
-        ⚙️
+        <SlidersHorizontal className="w-8 h-8" />
       </button>
 
       {showBatchPanel && (
