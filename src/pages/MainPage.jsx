@@ -59,6 +59,38 @@ export default function MainPage() {
       imageInputNode: "164",
     },
   };
+  const realismSettings = {
+    1: {
+      label: "Cartoon",
+      model: "animerge_v50.safetensors",
+      cfg: 8,
+      steps: 50,
+    },
+    2: {
+      label: "Stylized",
+      model: "meinaunreal_v5.safetensors",
+      cfg: 8,
+      steps: 50,
+    },
+    3: {
+      label: "Balanced",
+      model: "animesh_PrunedV22.safetensors",
+      cfg: 8,
+      steps: 50,
+    },
+    4: {
+      label: "Semi-Realistic",
+      model: "hellorealistic_V11.safetensors",
+      cfg: 8,
+      steps: 50,
+    },
+    5: {
+      label: "Photoreal",
+      model: "realcartoon3d_v8.safetensors",
+      cfg: 8,
+      steps: 50,
+    },
+  };
 
   useEffect(() => {
     if (selectedGirl?.image || selectedGirl?.video) {
@@ -72,6 +104,9 @@ export default function MainPage() {
   };
 
   const handleGenerate = async (type = "image") => {
+    const selectedRealism = realismSettings[realismLevel];
+    
+    console.log("⚙️ CFG:", selectedRealism.cfg, "| Steps:", selectedRealism.steps);
     if (!prompt.trim()) return;
     if (type === "video" && !mainImage) {
       alert("Please generate or select an image first.");
@@ -123,11 +158,29 @@ export default function MainPage() {
         }
       }
 
+      // Optional: inject checkpoint model, cfg, steps if node IDs are known
+      for (const node of Object.values(workflow)) {
+        if (node.class_type === "CheckpointLoaderSimple") {
+          node.inputs.ckpt_name = selectedRealism.model;
+        }
+        if (node.class_type === "KSampler") {
+          if (node.inputs.cfg) node.inputs.cfg = selectedRealism.cfg;
+          if (node.inputs.steps) node.inputs.steps = selectedRealism.steps;
+        }
+      }
+
+
       const res = await fetch("http://localhost:3001/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: workflow, image: type === "video" ? mainImage : undefined }),
       });
+
+
+      console.log("🎯 Realism level selected:", realismLevel);
+      console.log("📦 Injecting checkpoint:", selectedRealism.model);
+      console.log("⚙️ CFG:", selectedRealism.cfg, "| Steps:", selectedRealism.steps);
+      
 
       const data = await res.json();
       const queue_id = data?.queue_id;
@@ -235,8 +288,8 @@ export default function MainPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {showLeftPanel && (
-          <div className={`w-72 p-3 overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative ${showLeftPanel ? "block" : "hidden"} hidden lg:block`}>
-            <button
+          <div className={`w-72 p-3 overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative ${showLeftPanel ? "block" : "hidden"} hidden lg:block`}>            
+            <button 
               onClick={() => setShowLeftPanel(false)}
               className="absolute -right-3 top-1/2 transform -translate-y-1/2 bg-gray-700 text-white px-1 py-0.5 text-xs rounded-r shadow"
             >
@@ -263,9 +316,26 @@ export default function MainPage() {
                 </div>
               </div>
             ))}
+            <div className="mt-6">   
+                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>Cartoony</span>
+                <span>Photorealistic</span>
+              </div>           
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={realismLevel}
+                onChange={(e) => setRealismLevel(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
           </div>
+          
         )}
 
+        
         <div className="flex-1 flex flex-col items-center justify-start p-0 relative bg-gray-800 overflow-hidden max-h-screen">
           <div className="w-full max-w-[512px] aspect-[2/3] flex items-center justify-center mt-4">
             {mainImage &&
