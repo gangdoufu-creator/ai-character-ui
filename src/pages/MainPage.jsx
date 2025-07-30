@@ -484,7 +484,7 @@ export default function MainPage() {
 
         {/* Right Panel */}
         {showRightPanel && (
-          <div className="overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative flex-shrink-0 w-[15%] min-w-[40px] max-w-[200px] p-2 sm:p-3">
+          <div className="right-panel overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative flex-shrink-0 w-[15%] min-w-[40px] max-w-[200px] p-2 sm:p-3 h-[calc(100vh-80px)]">
             <div className="flex flex-col items-center space-y-2">
               {variations.length > 0 &&
                 variations.map((img, idx) => (
@@ -495,11 +495,10 @@ export default function MainPage() {
                     className="rounded cursor-pointer w-16 sm:w-24 md:w-32 lg:w-40 transition-transform duration-200 hover:scale-105 hover:opacity-90"
                     onClick={() => setMainImage(img)}
                   />
-                ))
-              }
+                ))}
             </div>
           </div>
-        )}        
+        )}
       </div>
     </div>
   );

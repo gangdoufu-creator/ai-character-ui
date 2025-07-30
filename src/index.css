@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.right-panel::-webkit-scrollbar {
+  width: 6px;              /* Thin scrollbar */
+}
+
+.right-panel::-webkit-scrollbar-track {
+  background: transparent; /* No track background */
+}
+
+.right-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); /* Light thumb */
+  border-radius: 4px;
+}
+
+.right-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4); /* Brighter on hover */
+}
