@@ -19,6 +19,7 @@ import {
 } from "../utils/workflowUtils";
 
 export default function MainPage() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const settingsref = useRef();
@@ -63,7 +64,9 @@ export default function MainPage() {
   }, [selectedGirl]);
 
   const handleGenerate = async (type = "image") => {
-    if (!prompt.trim()) return;
+    console.log("🔹 Get Lucky button clicked. Current prompt:", prompt);
+
+    // Only block if trying to make a video with no base image
     if (type === "video" && !mainImage) {
       alert("Please generate or select an image first.");
       return;
@@ -78,6 +81,7 @@ export default function MainPage() {
       breastSizeLevel,
       activeTags,
     });
+    
     const dynamicNegativePrompt = buildNegativePrompt({
       realismLevel,
       nudityLevel,
@@ -153,7 +157,7 @@ export default function MainPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col">
       {/* Header */}
-      <div className="w-full bg-black px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-6 relative">
+      <div className="w-full bg-black px-4 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-6 relative">
         <h1
           onClick={() => navigate("/")}
           className="relative left-[4px] text-3xl font-bold text-white cursor-pointer"
@@ -162,16 +166,24 @@ export default function MainPage() {
         </h1>
         <div className="flex flex-1 mx-2 items-center gap-4 pr-0 ml-[18px]">
           <textarea
-            rows={1}
+            rows={isExpanded ? 3 : 1}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onFocus={() => setIsExpanded(true)}
+            onBlur={() => setIsExpanded(false)}
+            onMouseEnter={() => setIsExpanded(true)}
+            onMouseLeave={(e) => {
+              if (!e.currentTarget.matches(':focus')) {
+                setIsExpanded(false);
+              }
+            }}
             placeholder="Enter your dream prompt..."
-            className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none"
+            className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 overflow-hidden rounded "
           />
           <button
             onClick={() => handleGenerate("image")}
             disabled={loading}
-            className={`px-6 py-[11px] text-sm font-semibold text-white rounded ${
+            className={`px-4 py-[8px] text-sm font-semibold text-white rounded ${
               loading
                 ? "bg-gray-600 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-700"
@@ -200,8 +212,9 @@ export default function MainPage() {
       {showBatchPanel && (
         <div
           ref={settingsref}
-          className="absolute right-6 top-[90px] bg-gray-700 shadow-lg border border-gray-300 rounded p-3 z-50 text-sm w-48"
+          className="absolute right-6 top-[90px] bg-gray-700 shadow-lg border border-gray-300 rounded p-3 z-50 text-sm w-64 max-h-[80vh] overflow-y-auto"
         >
+          {/* Batch Settings */}
           <label className="block mb-2 font-semibold text-white">Batch</label>
           <input
             type="range"
@@ -215,14 +228,123 @@ export default function MainPage() {
           <div className="text-sm text-white mt-1 text-right">
             {batchCount} image{batchCount > 1 ? "s" : ""}
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-500 my-3"></div>
+
+          {/* Sliders (same as left panel) */}
+          <div className="bg-gray-800 rounded-lg px-3 py-3 shadow-md mb-4">
+            {/* Realism */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Realism</h3>
+                <div className="text-gray-300 text-xs">
+                  {realismSettings[realismLevel]?.label || ""}
+                </div>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={realismLevel}
+                onChange={(e) => setRealismLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+
+            {/* Body Type */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Body Type</h3>
+                <div className="text-gray-300 text-xs">
+                  {bodyTypePrompts[bodyTypeLevel]?.label || ""}
+                </div>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={bodyTypeLevel}
+                onChange={(e) => setBodyTypeLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+
+            {/* Breast Size */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Breast Size</h3>
+                <div className="text-gray-300 text-xs">
+                  {breastSizePrompts[breastSizeLevel]?.label || ""}
+                </div>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={breastSizeLevel}
+                onChange={(e) => setBreastSizeLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+
+            {/* Nudity */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Nudity</h3>
+                <div className="text-gray-300 text-xs">
+                  {nudityPrompts[nudityLevel]?.label || ""}
+                </div>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={nudityLevel}
+                onChange={(e) => setNudityLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+          </div>
+
+          {/* Tags Panel */}
+          <div className="bg-gray-800 rounded-lg px-3 py-3 shadow-md">
+            {Object.entries(tagCategories).map(([category, tags]) => (
+              <div key={category} className="mb-2">
+                <h3 className="text-xs font-semibold text-white text-center mb-1 py-1">
+                  {category}
+                </h3>
+                <div className="flex flex-wrap gap-1 justify-center">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => handleToggleTag(`${category}:${tag}`)}
+                      className={`text-xs px-2 py-0.5 rounded ${
+                        activeTags.has(`${category}:${tag}`)
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-700 text-white hover:bg-gray-600"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
 
       {/* Main flex container */}
       <div className="flex flex-1 overflow-hidden relative px-1 py-2">        
         {/* LEFT PANEL */}
         {showLeftPanel && (
-          <div className="w-48 p-4 mr-1 overflow-y-auto bg-gradient-to-b from-gray-900 to-black hidden sm:flex flex-col justify-start mt-[10%] rounded-lg">
+          <div className="w-48 p-2 mr-1 overflow-y-auto bg-gradient-to-b from-gray-900 to-black hidden sm:flex flex-col justify-start rounded-lg">
             {/* Sliders */}
             <div className="bg-gray-800 rounded-lg px-3 py-3 shadow-md mb-4">
               {/* Realism */}
@@ -327,8 +449,8 @@ export default function MainPage() {
         
 
         {/* Main Image Viewer */}
-        <div className="flex-1 flex flex-col items-center justify-start p-1 px-4 relative bg-gray-800 overflow-hidden max-h-screen">
-          <div className="w-full max-w-[512px] aspect-[2/3] flex items-center justify-center mt-4">
+        <div className="flex-1 flex flex-col items-center justify-start p-0 px-2 relative bg-gray-800 overflow-hidden max-h-screen">
+          <div className="w-full max-w-[512px] aspect-[2/3] flex items-center justify-center mt-2">
             {mainImage &&
               (mainImage.endsWith(".mp4") ? (
                 <video
@@ -362,8 +484,8 @@ export default function MainPage() {
 
         {/* Right Panel */}
         {showRightPanel && (
-          <div className="overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative flex-shrink-0 w-[15%] min-w-[80px] max-w-[200px] p-2 sm:p-3">
-            <div className="flex flex-col items-center space-y-4">
+          <div className="overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative flex-shrink-0 w-[15%] min-w-[40px] max-w-[200px] p-2 sm:p-3">
+            <div className="flex flex-col items-center space-y-2">
               {variations.length > 0 &&
                 variations.map((img, idx) => (
                   <img

@@ -1,8 +1,5 @@
 import { realismPrompts, nudityPrompts, breastSizePrompts } from "../config/promptConfig";
 
-/**
- * Build the full positive prompt string
- */
 export function buildFullPrompt({
   defaultTags,
   prompt,
@@ -15,7 +12,7 @@ export function buildFullPrompt({
   const nudity = nudityPrompts[nudityLevel];
   const breastSize = breastSizePrompts[breastSizeLevel];
 
-  // Map activeTags into model-friendly phrases
+  // Map active tags into readable text
   const activeTagsText = [...activeTags]
     .map((tag) => {
       const [category, value] = tag.split(":");
@@ -25,17 +22,33 @@ export function buildFullPrompt({
     })
     .join(", ");
 
-  return [
-    defaultTags,
-    prompt,
-    ...realism.pos,
-    ...nudity.pos,
-    ...breastSize.pos,
-    activeTagsText
+  // If user entered text, use it; otherwise build purely from sliders/tags
+  const usePrompt = prompt?.trim().length > 0 ? prompt.trim() : "";
+
+  // Build the final prompt
+  let finalPrompt = [
+    defaultTags,                // always include default tags if set
+    usePrompt,                  // user prompt text if any
+    ...realism.pos,              // realism slider
+    ...nudity.pos,               // nudity slider
+    ...breastSize.pos,           // breast size slider
+    activeTagsText               // active tags
   ]
-    .filter(Boolean)
+    .filter(Boolean)              // remove empty strings
     .join(", ");
+
+  // If it's still empty (unlikely), at least include slider defaults
+  if (!finalPrompt.trim()) {
+    finalPrompt = [
+      ...realism.pos,
+      ...nudity.pos,
+      ...breastSize.pos
+    ].join(", ");
+  }
+
+  return finalPrompt;
 }
+
 
 /**
  * Build the negative prompt string

@@ -8,7 +8,7 @@ const app = express();
 
 // Load environment variables (if using .env)
 const PORT = process.env.PORT || 3001;
-const COMFY_API = process.env.COMFY_API || "https://4yhjpqfavudtks-8188.proxy.runpod.net";
+const COMFY_API = process.env.COMFY_API;
 
 // Middleware
 app.use(cors());
