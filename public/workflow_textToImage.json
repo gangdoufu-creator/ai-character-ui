@@ -14,7 +14,7 @@
   },
   "2": {
     "inputs": {
-      "text": "(worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, watermark, extra arms, CGI, 3d, anime, cartoon, plastic skin, shiny skin, clothing, underwear, panties, bra, bikini, close up, head shot, ugly, plastic breasts, wet, lace, hairy, streaks, streaky, top,",
+      "text": "lowres, bad anatomy, watermark, extra arms, ugly, streaks, streaky",
       "clip": [
         "1",
         0

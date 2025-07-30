@@ -13,6 +13,7 @@ export default function MainPage() {
   const [prompt, setPrompt] = useState(
     selectedGirl?.prompt || localStorage.getItem("initialPrompt") || "Beautiful Lady"
   );
+
   const [variations, setVariations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTags, setActiveTags] = useState(new Set());
@@ -43,29 +44,77 @@ export default function MainPage() {
     });
   };
 
-  const realismTags = {
-  1: "2D",
-  2: "2.5D",
-  3: "3D",
-  4: "3.5D",
-  5: "Photographic"
-};
+  const realismPrompts = {
+    1: {
+      pos: ["2D", "cartoon style", "bright flat colors"],
+      neg: ["blurry", "flat", "low detail", "muddy colors"],
+    },
+    2: {
+      pos: ["2.5D", "stylized 3D look", "clean lineart"],
+      neg: ["blurry details", "off proportions", "low poly look"],
+    },
+    3: {
+      pos: ["3D", "cinematic render", "realistic lighting"],
+      neg: ["over-smoothed textures", "fake depth", "plastic look"],
+    },
+    4: {
+      pos: ["3.5D", "semi-realistic", "detailed skin textures"],
+      neg: ["plastic skin", "uncanny valley"],
+    },
+    5: {
+      pos: ["Photographic", "hyper-realistic details", "high-res"],
+      neg: ["cartoonish features", "fake photographic artifacts"],
+    },
+  };
 
-  const nudityTags = {
-  1: "sexy clothes",
-  2: "suggestive",
-  3: "bikini",
-  4: "underwear",
-  5: "nude"
-};
 
-const breastSizeTags = {
-  1: "small breasts",
-  2: "medium breasts",
-  3: "large breasts",
-  4: "very large breasts",
-  5: "huge breasts"
-};
+  const nudityPrompts = {
+    1: {
+      pos: ["sexy clothes", "teasing outfit", "covered cleavage"],
+      neg: ["excessive cleavage", "nudity", "explicit poses"],
+    },
+    2: {
+      pos: ["suggestive", "flirty look", "revealing outfits"],
+      neg: ["full nudity", "explicit content"],
+    },
+    3: {
+      pos: ["bikini", "beach outfit", "revealing but tasteful"],
+      neg: ["full nudity", "explicit content"],
+    },
+    4: {
+      pos: ["underwear", "lingerie"],
+      neg: ["explicit scenes", "hardcore poses"],
+    },
+    5: {
+      pos: ["nude", "tasteful nudity", "natural lighting"],
+      neg: ["clothes", "covered", "censored", "overly erotic"],
+    },
+  };
+
+  const breastSizePrompts = {
+    1: {
+      pos: ["small breasts", "petite figure", "natural proportions"],
+      neg: ["oversized breasts", "unnatural proportions"],
+    },
+    2: {
+      pos: ["medium breasts", "balanced figure"],
+      neg: ["gigantic breasts", "unnatural proportions"],
+    },
+    3: {
+      pos: ["large breasts", "curvy figure"],
+      neg: ["very small breasts", "flat chest"],
+    },
+    4: {
+      pos: ["very large breasts", "voluptuous figure"],
+      neg: ["very small breasts"],
+    },
+    5: {
+      pos: ["huge breasts", "busty"],
+      neg: ["flat chest", "unrealistic proportions"],
+    },
+  };
+
+
 
   const workflowConfigs = {
     image: {
@@ -87,31 +136,31 @@ const breastSizeTags = {
   const realismSettings = {
     1: {
       label: "Cartoon",
-      model: ["abyssorangemix3A0M3_aom3a1b.safetensors","animerge_v50.safetensors"],
+      model: ["abyssorangemix3A0M3_aom3a1b.safetensors"], //["animerge_v50.safetensors"],
       cfg: 8,
       steps: 50,
     },
     2: {
       label: "Stylized",
-      model: ["stylizedModel.safetensors","meinaunreal_v5.safetensors","realcartoon3d_v18.safetensors"],
+      model: ["realcartoon3d_v18.safetensors"], //stylizedModel.safetensors","meinaunreal_v5.safetensors","
       cfg: 8,
       steps: 50,
     },
     3: {
       label: "Balanced",
-      model: ["mixtapeBlues_v20Swamp.safetensors","animesh_PrunedV22.safetensors"],
+      model: ["mixtapeBlues_v20Swamp.safetensors"], //,"animesh_PrunedV22.safetensors"],
       cfg: 8,
       steps: 50,
     },
     4: {
       label: "Semi-Realistic",
-      model: ["semiReal.safetensors","aniverse.safetensors","hellorealistic_V11.safetensors","realcartoon3d_v8.safetensors"], // "hyphoria.safetensors"
+      model: ["semiReal.safetensors"], //"aniverse.safetensors","hellorealistic_V11.safetensors","realcartoon3d_v8.safetensors"], // "hyphoria.safetensors"
       cfg: 8,
       steps: 50,
     },
     5: {
       label: "Photographic",
-      model: ["japaneseStyleRealistic_v20.safetensors", "norealmix_v20.safetensors","majicmixRealistic_v7.safetensors"], // "xxmix9realistic_v30.safetensors",
+      model: ["japaneseStyleRealistic_v20.safetensors"], //"norealmix_v20.safetensors","majicmixRealistic_v7.safetensors"], // "xxmix9realistic_v30.safetensors",
       cfg: 8,
       steps: 50,
     },
@@ -129,136 +178,148 @@ const breastSizeTags = {
   };
 
   const handleGenerate = async (type = "image") => {
-  if (!prompt.trim()) return;
-  if (type === "video" && !mainImage) {
-    alert("Please generate or select an image first.");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const config = workflowConfigs[type];
-    if (!config) throw new Error(`❌ Invalid type: ${type}`);
-
-    // Load workflow template
-    const response = await fetch(config.file);
-    if (!response.ok) throw new Error("❌ Failed to load workflow file");
-    const baseWorkflow = await response.json();
-
-    const selectedRealism = realismSettings[realismLevel];
-
-    // Randomly pick a model from the array
-    const randomModel = selectedRealism.model[
-      Math.floor(Math.random() * selectedRealism.model.length)
-    ];
-
-    // Compose full prompt with all sliders & tags
-    const realismTag = realismTags[realismLevel];
-    const nudityTag = nudityTags[nudityLevel];
-    const breastSizeTag = breastSizeTags[breastSizeLevel];
-
+    if (!prompt.trim()) return;
+    if (type === "video" && !mainImage) {
+      alert("Please generate or select an image first.");
+      return;
+    }    
     const activeTagsText = Array.from(activeTags).join(", ");
-    const fullPrompt = `${defaultTags}, ${prompt}, ${realismTag}, ${nudityTag}, ${breastSizeTag}${
-      activeTagsText ? `, ${activeTagsText}` : ""
-    }`;
+    const realism = realismPrompts[realismLevel];
+    const nudity = nudityPrompts[nudityLevel];
+    const breastSize = breastSizePrompts[breastSizeLevel];
+    const fullPrompt = [
+    defaultTags,
+    prompt,
+    ...realism.pos,
+    ...nudity.pos,
+    ...breastSize.pos,
+    ...activeTagsText,
+  ].join(", ");
 
-    // Handle batch requests one by one
-    for (let i = 0; i < batchCount; i++) {
-      // Deep copy so each batch request is independent
-      const workflow = JSON.parse(JSON.stringify(baseWorkflow));
+  const dynamicNegativePrompt = [
+    "(worst quality:2)",
+    "(low quality:2)",
+    "bad anatomy",
+    "watermark",
+    "extra arms",
+    ...realism.neg,
+    ...nudity.neg,
+    ...breastSize.neg,
+  ].join(", ");
 
-      // Inject checkpoint from realism slider
-      for (const node of Object.values(workflow)) {
-        if (node.class_type === "CheckpointLoaderSimple") {
-          node.inputs.ckpt_name = randomModel;   // ✅ Correctly use randomModel
-        }
-        if (node.class_type === "KSampler") {
-          if (node.inputs.cfg) node.inputs.cfg = selectedRealism.cfg;
-          if (node.inputs.steps) node.inputs.steps = selectedRealism.steps;
-        }
-      }
-      
-      // Log the model
-      console.log("🎯 Realism Level:", realismLevel, "| Using Checkpoint:", randomModel);
+    setLoading(true);
+    try {
+      const config = workflowConfigs[type];
+      if (!config) throw new Error(`❌ Invalid type: ${type}`);
 
-      // Update prompt text
-      if (config.promptNode && workflow[config.promptNode]?.inputs) {
-        workflow[config.promptNode].inputs.text = fullPrompt;
-      }
+      // Load workflow template
+      const response = await fetch(config.file);
+      if (!response.ok) throw new Error("❌ Failed to load workflow file");
+      const baseWorkflow = await response.json();
 
-      // Update negative prompt
-      const negativePrompt =
-        "(worst quality:2), (low quality:2), (normal quality:2), lowres, bad anatomy, watermark, extra arms, CGI, 3d, anime, cartoon, plastic skin, shiny skin, low quality, blurry, extra limbs, bad anatomy, ugly";
-      if (config.negativeNode && workflow[config.negativeNode]?.inputs) {
-        workflow[config.negativeNode].inputs.text = negativePrompt;
-      }
+      const selectedRealism = realismSettings[realismLevel];
 
-      // Seed & batch size
-      if (config.seedNode && workflow[config.seedNode]?.inputs) {
-        workflow[config.seedNode].inputs.seed = Math.floor(
-          Math.random() * Number.MAX_SAFE_INTEGER
-        );
-      }
-      if (type === "image" && config.batchNode && workflow[config.batchNode]?.inputs) {
-        workflow[config.batchNode].inputs.batch_size = 1;
-      }
+      // Randomly pick a model from the array
+      const randomModel = selectedRealism.model[
+        Math.floor(Math.random() * selectedRealism.model.length)
+      ];
 
-      // Video workflow image injection
-      if (type === "video" && config.imageInputNode && workflow[config.imageInputNode]?.inputs) {
-        const filename = extractFilename(mainImage);
-        workflow[config.imageInputNode].inputs.image = `${filename} [output]`;
-      }
+      // Handle batch requests one by one
+      for (let i = 0; i < batchCount; i++) {
+        // Deep copy so each batch request is independent
+        const workflow = JSON.parse(JSON.stringify(baseWorkflow));
 
-      // Debugging output
-      console.log("📝 Final Prompt Sent:", fullPrompt);
-      console.log("🎯 Realism Slider:", realismLevel, "| Checkpoint:", randomModel);
-      console.log("👗 Nudity Slider:", nudityLevel, "| Tag:", nudityTag);
-      console.log("👙 Breast Size Slider:", breastSizeLevel, "| Tag:", breastSizeTag);
-
-
-      // Send workflow
-      const res = await fetch("http://localhost:3001/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: workflow }),
-      });
-
-      const data = await res.json();
-      const queue_id = data?.queue_id;
-      if (!queue_id) throw new Error("❌ No queue_id returned");
-
-      // Poll for this image
-      const serverUrl = "http://localhost:3001";
-      let foundImage = null;
-      for (let j = 0; j < 1999; j++) {
-        const histRes = await fetch(`${serverUrl}/history/${queue_id}`);
-        const histData = await histRes.json();
-        const outputs = Object.values(histData[queue_id]?.outputs || {});
-
-        for (const output of outputs) {
-          if (output?.images) {
-            foundImage = `${serverUrl}/view?filename=${output.images[0].filename}`;
-            break;
+        // Inject checkpoint from realism slider
+        for (const node of Object.values(workflow)) {
+          if (node.class_type === "CheckpointLoaderSimple") {
+            node.inputs.ckpt_name = randomModel;   // ✅ Correctly use randomModel
+          }
+          if (node.class_type === "KSampler") {
+            if (node.inputs.cfg) node.inputs.cfg = selectedRealism.cfg;
+            if (node.inputs.steps) node.inputs.steps = selectedRealism.steps;
           }
         }
-        if (foundImage) break;
-        await new Promise((r) => setTimeout(r, 1000));
-      }
+        
+        // Log the model
+        console.log("🎯 Realism Level:", realismLevel, "| Using Checkpoint:", randomModel);
 
-      // Add image to UI
-      if (foundImage) {
-        setMainImage((prev) => prev || foundImage);
-        setVariations((prev) => [foundImage, ...prev]);
+        // Update prompt text
+        if (config.promptNode && workflow[config.promptNode]?.inputs) {
+          workflow[config.promptNode].inputs.text = fullPrompt;
+        }
+
+        // Update negative prompt
+        if (config.negativeNode && workflow[config.negativeNode]?.inputs) {
+          workflow[config.negativeNode].inputs.text = dynamicNegativePrompt;
+        }
+
+        // Seed & batch size
+        if (config.seedNode && workflow[config.seedNode]?.inputs) {
+          workflow[config.seedNode].inputs.seed = Math.floor(
+            Math.random() * Number.MAX_SAFE_INTEGER
+          );
+        }
+        if (type === "image" && config.batchNode && workflow[config.batchNode]?.inputs) {
+          workflow[config.batchNode].inputs.batch_size = 1;
+        }
+
+        // Video workflow image injection
+        if (type === "video" && config.imageInputNode && workflow[config.imageInputNode]?.inputs) {
+          const filename = extractFilename(mainImage);
+          workflow[config.imageInputNode].inputs.image = `${filename} [output]`;
+        }
+
+        // Debugging output
+        console.log("📝 Final Prompt Sent:", fullPrompt);
+        console.log("🎯 Realism Slider:", realismLevel, "| Checkpoint:", randomModel);
+        console.log("👗 Nudity Slider:", nudityLevel, "| Tags:", nudity.pos);
+        console.log("👙 Breast Size Slider:", breastSizeLevel, "| Tags:", breastSize.pos);
+
+
+        // Send workflow
+        const res = await fetch("http://localhost:3001/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: workflow }),
+        });
+
+        const data = await res.json();
+        const queue_id = data?.queue_id;
+        if (!queue_id) throw new Error("❌ No queue_id returned");
+
+      
+        // Poll for this image
+        const serverUrl = "http://localhost:3001";
+        let foundImage = null;
+        for (let j = 0; j < 1999; j++) {
+          const histRes = await fetch(`${serverUrl}/history/${queue_id}`);
+          const histData = await histRes.json();
+          const outputs = Object.values(histData[queue_id]?.outputs || {});
+
+          for (const output of outputs) {
+            if (output?.images) {
+              foundImage = `${serverUrl}/view?filename=${output.images[0].filename}`;
+              break;
+            }
+          }
+          if (foundImage) break;
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+
+        // Add image to UI
+        if (foundImage) {
+          setMainImage((prev) => prev || foundImage);
+          setVariations((prev) => [foundImage, ...prev]);
+        }
       }
+    } catch (err) {
+      console.error("❌ Error in handleGenerate:", err);
+      alert("Failed to generate media.");
+    } finally {
+      setLoading(false);
+      localStorage.removeItem("defaultTags");
     }
-  } catch (err) {
-    console.error("❌ Error in handleGenerate:", err);
-    alert("Failed to generate media.");
-  } finally {
-    setLoading(false);
-    localStorage.removeItem("defaultTags");
-  }
-};
+  };
 
 
 
@@ -424,36 +485,33 @@ const breastSizeTags = {
           </button>
         </div>
 
-      {showRightPanel && (
-        <div
-          className="bg-gradient-to-b from-gray-900 to-black relative w-24 sm:w-36 md:w-60 lg:w-72 p-2 sm:p-3 overflow-y-auto"
-          style={{ maxHeight: "100vh" }}
-        >
-          <button
-            onClick={() => setShowRightPanel(false)}
-            className="absolute -left-3 top-1/2 transform -translate-y-1/2 bg-gray-700 text-white px-1 py-0.5 text-xs rounded-l shadow"
-          >
-            ✖
-          </button>
-          <h2 className="text-xl font-bold mb-4">Gallery</h2>
-          <div className="flex flex-col space-y-4">
-            {variations.length === 0 ? (
-              <p className="text-sm text-gray-500">No variations yet.</p>
-            ) : (
-              variations.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={img}
-                  alt={`variation-${idx}`}
-                  className="rounded cursor-pointer w-16 sm:w-24 md:w-32 lg:w-40 transition-transform duration-200 hover:scale-105 hover:opacity-90"
-                  onClick={() => setMainImage(img)}
-                />
-              ))
-            )}
+        {showRightPanel && (
+          <div className={`overflow-y-auto bg-gradient-to-b from-gray-900 to-black relative ${showRightPanel ? "block" : "hidden"} w-24 sm:w-36 md:w-60 lg:w-72 p-2 sm:p-3`}>
+            <button
+              onClick={() => setShowRightPanel(false)}
+              className="absolute -left-3 top-1/2 transform -translate-y-1/2 bg-gray-700 text-white px-1 py-0.5 text-xs rounded-l shadow"
+            >
+              ✖
+            </button>
+            <h2 className="text-xl font-bold mb-4">Gallery</h2>
+            <div className="flex flex-col space-y-4">
+              {variations.length === 0 ? (
+                <p className="text-sm text-gray-500">No variations yet.</p>
+              ) : (
+                variations.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt={`variation-${idx}`}
+                    className="rounded cursor-pointer w-16 sm:w-24 md:w-32 lg:w-40 transition-transform duration-200 hover:scale-105 hover:opacity-90"
+                    onClick={() => setMainImage(img)}
+                  />
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      )}
-
+        )}
+      </div>
 
       {!showLeftPanel && (
         <button
@@ -474,8 +532,6 @@ const breastSizeTags = {
           ◀
         </button>
       )}
-    </div> {/* <-- closes outer flex container */}
-  </div>   {/* <-- closes top-level div (min-h-screen) */}
-);
+    </div>
+  );
 }
-
