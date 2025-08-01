@@ -68,4 +68,5 @@ export function buildNegativePrompt({ realismLevel, nudityLevel, breastSizeLevel
     ...nudity.neg,
     ...breastSize.neg
   ].join(", ");
+
 }

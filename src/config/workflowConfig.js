@@ -1,6 +1,6 @@
 export const workflowConfigs = {
   image: {
-    file: "/workflow_textToImage.json",
+    file: "/workflow_adetailers.json",
     promptNode: "14",
     negativeNode: "2",
     seedNode: "3",

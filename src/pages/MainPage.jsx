@@ -88,6 +88,12 @@ export default function MainPage() {
       breastSizeLevel,
     });
 
+
+    // 🖨️ Log to Console
+    console.log("➡️ Full Prompt (Positive):", fullPrompt);
+    console.log("⬅️ Negative Prompt:", dynamicNegativePrompt);
+
+
     setLoading(true);
 
     try {
@@ -116,6 +122,7 @@ export default function MainPage() {
             node.inputs.steps = selectedRealism.steps;
           }
         }
+        console.log(`🟢 Injected Checkpoint Model: ${randomModel}`);
 
         if (config.promptNode && workflow[config.promptNode]?.inputs) {
           workflow[config.promptNode].inputs.text = fullPrompt;
@@ -134,7 +141,7 @@ export default function MainPage() {
           const filename = extractFilename(mainImage);
           workflow[config.imageInputNode].inputs.image = `${filename} [output]`;
         }
-
+        console.log("🚀 Final Workflow JSON Sent to ComfyUI:", JSON.stringify(workflow, null, 2));
         const foundImage = await sendWorkflowAndPoll(
           workflow,
           "http://localhost:3001"
@@ -145,6 +152,8 @@ export default function MainPage() {
           setVariations((prev) => [foundImage, ...prev]);
         }
       }
+      
+
     } catch (err) {
       console.error("❌ Error in handleGenerate:", err);
       alert(err.message || "Failed to generate media.");
