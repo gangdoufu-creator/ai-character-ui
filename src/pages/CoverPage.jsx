@@ -109,7 +109,7 @@ const handleGetLucky = () => {
       {/* Grid of Girls */}
       <div className="flex-1 p-10">
         <h2 className="text-4xl font-bold text-center mb-10">Choose Your Dream Girl</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 place-items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-0.5 place-items-center">
           {girlTypes.map((girl, index) => (
             <div
               key={index}
