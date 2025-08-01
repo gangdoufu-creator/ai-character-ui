@@ -3,13 +3,20 @@ import { useNavigate } from "react-router-dom";
 import girlTypes from "../utils/girlTypes";
 import { SlidersHorizontal, User } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { tagCategories } from "../config/promptConfig";
 
 export default function CoverPage() {
   const navigate = useNavigate();
-  const [prompt, setPrompt] = useState("Beautiful Lady");
+  const [prompt, setPrompt] = useState("");
   const [showBatchPanel, setShowBatchPanel] = useState(false);
   const [batchCount, setBatchCount] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [realismLevel, setRealismLevel] = useState(1);
+  const [bodyTypeLevel, setBodyTypeLevel] = useState(3);
+  const [breastSizeLevel, setBreastSizeLevel] = useState(2);
+  const [nudityLevel, setNudityLevel] = useState(3);
+  const [activeTags, setActiveTags] = useState(new Set());
+
 
 const handleGetLucky = () => {
   if (!prompt.trim()) return;
@@ -86,11 +93,13 @@ const handleGetLucky = () => {
         </div>
       </div>
 
-      {showBatchPanel && (      
-        <div 
+      {showBatchPanel && (
+        <div
           ref={settingsRef}
-          className="absolute right-6 top-[90px] bg-gray-700 shadow-lg border border-gray-300 rounded p-3 z-50 text-sm w-48">
-          <label className="block mb-2 font-semibold text-white">Iterations</label>
+          className="absolute right-6 top-[90px] bg-gray-700 shadow-lg border border-gray-300 rounded p-3 z-50 text-sm w-64 max-h-[80vh] overflow-y-auto"
+        >
+          {/* Batch Settings */}
+          <label className="block mb-2 font-semibold text-white">Batch</label>
           <input
             type="range"
             min={1}
@@ -103,8 +112,104 @@ const handleGetLucky = () => {
           <div className="text-sm text-white mt-1 text-right">
             {batchCount} image{batchCount > 1 ? "s" : ""}
           </div>
+
+          <div className="border-t border-gray-500 my-3"></div>
+
+          {/* Sliders */}
+          <div className="bg-gray-800 rounded-lg px-3 py-3 shadow-md mb-4">
+            {/* Realism */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Realism</h3>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={realismLevel}
+                onChange={(e) => setRealismLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+
+            {/* Body Type */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Body Type</h3>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={bodyTypeLevel}
+                onChange={(e) => setBodyTypeLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+
+            {/* Breast Size */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Breast Size</h3>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={breastSizeLevel}
+                onChange={(e) => setBreastSizeLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+
+            {/* Nudity */}
+            <div className="mt-1">
+              <div className="flex justify-between items-center mb-0.5">
+                <h3 className="text-xs font-semibold text-white">Nudity</h3>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={nudityLevel}
+                onChange={(e) => setNudityLevel(Number(e.target.value))}
+                className="w-full h-1"
+              />
+            </div>
+          </div>
+
+          {/* Tags Panel */}
+          <div className="bg-gray-800 rounded-lg px-3 py-3 shadow-md">
+            {Object.entries(tagCategories).map(([category, tags]) => (
+              <div key={category} className="mb-2">
+                <h3 className="text-xs font-semibold text-white text-center mb-1 py-1">
+                  {category}
+                </h3>
+                <div className="flex flex-wrap gap-1 justify-center">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => handleToggleTag(`${category}:${tag}`)}
+                      className={`text-xs px-2 py-0.5 rounded ${
+                        activeTags.has(`${category}:${tag}`)
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-700 text-white hover:bg-gray-600"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+      
 
       {/* Grid of Girls */}
       <div className="flex-1 p-10">
