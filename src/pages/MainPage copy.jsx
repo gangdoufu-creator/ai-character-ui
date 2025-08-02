@@ -1,8 +1,7 @@
-import { getWorkflowConfig } from "../config/workflowConfig";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, SlidersHorizontal } from "lucide-react";
-
+import { workflowConfigs } from "../config/workflowConfig";
 import {
   tagCategories,
   nudityPrompts,
@@ -20,14 +19,9 @@ import {
 } from "../utils/workflowUtils";
 
 export default function MainPage() {
-
-
-  
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { selectedImage, workflowType: workflowTypeFromState } = location.state || {};
-
   const settingsref = useRef();
   const selectedGirl = location.state;
 
@@ -69,142 +63,105 @@ export default function MainPage() {
     }
   }, [selectedGirl]);
 
-  const inferWorkflowType = (filename) => {
-  if (!filename) return "image";  // Default fallback
+  const handleGenerate = async (type = "image") => {
+    console.log("🔹 Get Lucky button clicked. Current prompt:", prompt);
 
-  const lowerCaseName = filename.toLowerCase();
-
-  if (lowerCaseName.includes("anime")) return "animeGirl";
-  if (lowerCaseName.includes("realistic")) return "realisticGirl";
-  if (lowerCaseName.includes("video")) return "video";
-  // Add more detection rules here if needed...
-
-  return "image";  // Fallback if no match found
-};
-
-
-
-const handleGenerate = async (type = "image") => {
-  console.log("🔹 Get Lucky button clicked. Current prompt:", prompt);
-
-  const filenameToCheck = selectedImage || mainImage || "";
-  const workflowType = inferWorkflowType(filenameToCheck);
-
-  const config = getWorkflowConfig(workflowType || type);  // Declare config NEXT
-
-  if (!config) throw new Error(`❌ Invalid workflow type: ${workflowType || type}`);
-
-  console.log("🔧 Using Workflow Config:", config);
-  console.log("🟠 Attempting to load workflow file:", config.file);
-  console.log("🧡 Inferred WorkflowType from filename:", workflowType);
-
-  const response = await fetch(config.file);  // ✅ Now config is defined and safe to use
-  if (!response.ok) throw new Error("❌ Failed to load workflow file");
-
-  const baseWorkflow = await response.json();
-
-
-  if (type === "video" && !mainImage) {
-    alert("Please generate or select an image first.");
-    return;
-  }
-
-  const fullPrompt = buildFullPrompt({
-    defaultTags,
-    prompt,
-    realismLevel,
-    bodyTypeLevel,
-    nudityLevel,
-    breastSizeLevel,
-    activeTags,
-  });
-
-  const dynamicNegativePrompt = buildNegativePrompt({
-    realismLevel,
-    nudityLevel,
-    breastSizeLevel,
-  });
-
-  setLoading(true);
-
-  try {
-    // 🔄 Dynamically get workflow config based on workflowType passed from CoverPage
-    const config = getWorkflowConfig(workflowType || type); // fallback to old type if workflowType not passed
-    if (!config) throw new Error(`❌ Invalid workflow type: ${workflowType || type}`);
-
-    // 🔄 Fetch Workflow JSON file dynamically
-    const response = await fetch(config.file);
-    if (!response.ok) throw new Error("❌ Failed to load workflow file");
-    const baseWorkflow = await response.json();
-
-    const selectedRealism = realismSettings[realismLevel];
-    const randomModel =
-      selectedRealism.model[
-        Math.floor(Math.random() * selectedRealism.model.length)
-      ];
-
-    for (let i = 0; i < batchCount; i++) {
-      const workflow = JSON.parse(JSON.stringify(baseWorkflow));
-
-      // Inject Checkpoint and Sampler Settings
-      for (const node of Object.values(workflow)) {
-        if (node.class_type === "CheckpointLoaderSimple") {
-          node.inputs.ckpt_name = randomModel;
-        }
-        if (node.class_type === "KSampler") {
-          node.inputs.cfg = selectedRealism.cfg;
-          node.inputs.steps = selectedRealism.steps;
-        }
-      }
-
-      console.log(`🟢 Injected Checkpoint Model: ${randomModel}`);
-
-      // Inject Prompts
-      if (config.promptNode && workflow[config.promptNode]?.inputs) {
-        workflow[config.promptNode].inputs.text = fullPrompt;
-      }
-      if (config.negativeNode && workflow[config.negativeNode]?.inputs) {
-        workflow[config.negativeNode].inputs.text = dynamicNegativePrompt;
-      }
-
-      // Inject Random Seed
-      if (config.seedNode && workflow[config.seedNode]?.inputs) {
-        workflow[config.seedNode].inputs.seed = Math.floor(
-          Math.random() * Number.MAX_SAFE_INTEGER
-        );
-      }
-
-      // If Video, Inject Base Image Filename
-      if (type === "video" && config.imageInputNode) {
-        const filename = extractFilename(mainImage);
-        workflow[config.imageInputNode].inputs.image = `${filename} [output]`;
-      }
-
-      //console.log("🚀 Final Workflow JSON Sent to ComfyUI:", JSON.stringify(workflow, null, 2));
-
-      // Send Workflow to API
-      const foundImage = await sendWorkflowAndPoll(
-        workflow,
-        "http://localhost:3001"
-      );
-
-      if (foundImage) {
-        setMainImage((prev) => prev || foundImage);
-        setVariations((prev) => [foundImage, ...prev]);
-      }
+    // Only block if trying to make a video with no base image
+    if (type === "video" && !mainImage) {
+      alert("Please generate or select an image first.");
+      return;
     }
 
-  } catch (err) {
-    console.error("❌ Error in handleGenerate:", err);
-    alert(err.message || "Failed to generate media.");
-  } finally {
-    setLoading(false);
-    localStorage.removeItem("defaultTags");
-  }
-  console.log("🧡 WorkflowType from navigation:", workflowType);
+    const fullPrompt = buildFullPrompt({
+      defaultTags,
+      prompt,
+      realismLevel,
+      bodyTypeLevel,
+      nudityLevel,
+      breastSizeLevel,
+      activeTags,
+    });
+    
+    const dynamicNegativePrompt = buildNegativePrompt({
+      realismLevel,
+      nudityLevel,
+      breastSizeLevel,
+    });
 
-};
 
+    // 🖨️ Log to Console
+    console.log("➡️ Full Prompt (Positive):", fullPrompt);
+    console.log("⬅️ Negative Prompt:", dynamicNegativePrompt);
+
+
+    setLoading(true);
+
+    try {
+      const config = workflowConfigs[type];
+      if (!config) throw new Error(`❌ Invalid type: ${type}`);
+
+      const response = await fetch(config.file);
+      if (!response.ok) throw new Error("❌ Failed to load workflow file");
+      const baseWorkflow = await response.json();
+
+      const selectedRealism = realismSettings[realismLevel];
+      const randomModel =
+        selectedRealism.model[
+          Math.floor(Math.random() * selectedRealism.model.length)
+        ];
+
+      for (let i = 0; i < batchCount; i++) {
+        const workflow = JSON.parse(JSON.stringify(baseWorkflow));
+
+        for (const node of Object.values(workflow)) {
+          if (node.class_type === "CheckpointLoaderSimple") {
+            node.inputs.ckpt_name = randomModel;
+          }
+          if (node.class_type === "KSampler") {
+            node.inputs.cfg = selectedRealism.cfg;
+            node.inputs.steps = selectedRealism.steps;
+          }
+        }
+        console.log(`🟢 Injected Checkpoint Model: ${randomModel}`);
+
+        if (config.promptNode && workflow[config.promptNode]?.inputs) {
+          workflow[config.promptNode].inputs.text = fullPrompt;
+        }
+        if (config.negativeNode && workflow[config.negativeNode]?.inputs) {
+          workflow[config.negativeNode].inputs.text = dynamicNegativePrompt;
+        }
+
+        if (config.seedNode && workflow[config.seedNode]?.inputs) {
+          workflow[config.seedNode].inputs.seed = Math.floor(
+            Math.random() * Number.MAX_SAFE_INTEGER
+          );
+        }
+
+        if (type === "video" && config.imageInputNode) {
+          const filename = extractFilename(mainImage);
+          workflow[config.imageInputNode].inputs.image = `${filename} [output]`;
+        }
+        console.log("🚀 Final Workflow JSON Sent to ComfyUI:", JSON.stringify(workflow, null, 2));
+        const foundImage = await sendWorkflowAndPoll(
+          workflow,
+          "http://localhost:3001"
+        );
+
+        if (foundImage) {
+          setMainImage((prev) => prev || foundImage);
+          setVariations((prev) => [foundImage, ...prev]);
+        }
+      }
+      
+
+    } catch (err) {
+      console.error("❌ Error in handleGenerate:", err);
+      alert(err.message || "Failed to generate media.");
+    } finally {
+      setLoading(false);
+      localStorage.removeItem("defaultTags");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col">
