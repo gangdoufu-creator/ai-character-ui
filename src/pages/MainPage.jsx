@@ -82,9 +82,110 @@ export default function MainPage() {
   return "image";  // Fallback if no match found
 };
 
+const extractEmbeddedWorkflow = async (imageUrl) => {
+  const response = await fetch(imageUrl, { cache: "no-store" });
+  const buffer = await response.arrayBuffer();
+  const data = new Uint8Array(buffer);
+
+  let textChunks = {};
+  let offset = 8;  // Skip PNG header
+
+  while (offset < data.length) {
+    const length = (data[offset] << 24) | (data[offset+1] << 16) | (data[offset+2] << 8) | data[offset+3];
+    const type = String.fromCharCode(...data.slice(offset+4, offset+8));
+
+    if (type === 'tEXt' || type === 'zTXt') {
+      const chunkData = data.slice(offset+8, offset+8+length);
+      const nullSeparator = chunkData.indexOf(0);
+      const key = new TextDecoder().decode(chunkData.slice(0, nullSeparator));
+
+      if (type === 'tEXt') {
+        const value = new TextDecoder().decode(chunkData.slice(nullSeparator + 1));
+        textChunks[key] = value;
+      } else if (type === 'zTXt') {
+        const compressionMethod = chunkData[nullSeparator + 1];
+        const compressedData = chunkData.slice(nullSeparator + 2);
+        try {
+          const decompressed = new TextDecoder().decode(pako.inflate(compressedData));
+          textChunks[key] = decompressed;
+        } catch (e) {
+          console.error(`Failed to decompress zTXt key ${key}:`, e);
+        }
+      }
+    }
+
+    offset += length + 12;
+  }
+
+  console.log("📋 Found PNG Metadata Keys:", Object.keys(textChunks));
+
+  // Try to find workflow key dynamically
+  const workflowKey = Object.keys(textChunks).find((key) =>
+    key.toLowerCase().includes("workflow")
+  );
+
+  if (workflowKey) {
+    console.log(`📦 Found Workflow Data under key: ${workflowKey}`);
+    try {
+      return JSON.parse(textChunks[workflowKey]);
+    } catch (e) {
+      console.error("❌ Failed to parse workflow JSON:", e);
+    }
+  }
+
+  return null;
+};
+
+
 
 
 const handleGenerate = async (type = "image") => {
+
+  const embeddedWorkflow = await extractEmbeddedWorkflow(selectedImage || mainImage);
+  if (!embeddedWorkflow) {
+    alert("❌ No embedded workflow found in image!");
+    return;
+  }
+  console.log("📦 Extracted Embedded Workflow JSON:", embeddedWorkflow);
+  const dynamicConfig = {};
+
+  for (const [nodeId, node] of Object.entries(embeddedWorkflow.nodes)) {
+    if (node.class_type === "CLIPTextEncode" && node._meta?.title?.includes("Prompt")) {
+      dynamicConfig.promptNode = nodeId;
+    }
+    if (node.class_type === "CLIPTextEncode" && node._meta?.title?.includes("Negative")) {
+      dynamicConfig.negativeNode = nodeId;
+    }
+    if (node.class_type === "KSampler") {
+      dynamicConfig.seedNode = nodeId;
+    }
+    if (node.class_type === "LoadImage" || node.class_type === "Image Input") {
+      dynamicConfig.imageInputNode = nodeId;
+    }
+    if (node.class_type === "EmptyLatentImage" || node.class_type === "BatchLatent") {
+      dynamicConfig.batchNode = nodeId;
+    }
+  }
+
+  if (dynamicConfig.promptNode && embeddedWorkflow.nodes[dynamicConfig.promptNode]?.inputs) {
+    embeddedWorkflow.nodes[dynamicConfig.promptNode].inputs.text = fullPrompt;
+  }
+  if (dynamicConfig.negativeNode && embeddedWorkflow.nodes[dynamicConfig.negativeNode]?.inputs) {
+    embeddedWorkflow.nodes[dynamicConfig.negativeNode].inputs.text = dynamicNegativePrompt;
+  }
+  if (dynamicConfig.seedNode && embeddedWorkflow.nodes[dynamicConfig.seedNode]?.inputs) {
+    embeddedWorkflow.nodes[dynamicConfig.seedNode].inputs.seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+  }
+  if (type === "video" && dynamicConfig.imageInputNode) {
+    const filename = extractFilename(mainImage);
+    embeddedWorkflow.nodes[dynamicConfig.imageInputNode].inputs.image = `${filename} [output]`;
+  }
+
+
+  console.log("🟢 Dynamically Constructed Config from Embedded Workflow:", dynamicConfig);
+
+
+
   console.log("🔹 Get Lucky button clicked. Current prompt:", prompt);
 
   const filenameToCheck = selectedImage || mainImage || "";

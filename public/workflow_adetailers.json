@@ -117,7 +117,7 @@
       "quality_jpeg_or_webp": 100,
       "optimize_png": false,
       "embed_workflow": true,
-      "save_workflow_as_json": false,
+      "save_workflow_as_json": true,
       "counter": 0,
       "time_format": "%Y-%m-%d-%H%M%S",
       "show_preview": true,
