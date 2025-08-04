@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import 'dotenv/config';
+import path from 'path';
+import fs from 'fs';
 
 const app = express();
 
@@ -63,22 +65,35 @@ app.get("/history/:queue_id", async (req, res) => {
   }
 });
 
-// GET: Fetch image
+
+
+// Existing /view route (overwrite this):
 app.get("/view", async (req, res) => {
   try {
     const filename = req.query.filename;
     if (!filename) throw new Error("Missing filename query parameter");
 
-    const comfyRes = await forwardToComfyUI(`/view?filename=${filename}`);
-    const buffer = await comfyRes.arrayBuffer();
+    // Absolute path to ComfyUI video output folder
+    const videoPath = `/Users/phouctrinh/ai-character-ui/backend/video/Com.mp4`;
 
-    res.setHeader("Content-Type", "image/png");
-    res.send(Buffer.from(buffer));
+
+    console.log(`🔍 Attempting to load video file: ${videoPath}`);
+
+    if (!fs.existsSync(videoPath)) {
+      console.error(`❌ Video not found at: ${videoPath}`);
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    res.setHeader("Content-Type", "video/mp4");
+    const stream = fs.createReadStream(videoPath);
+    stream.pipe(res);
+
   } catch (err) {
     console.error("❌ Proxy error on /view:", err);
-    res.status(500).json({ error: "Failed to load image" });
+    res.status(500).json({ error: "Failed to load video" });
   }
 });
+
 
 // --- Start Server ---
 app.listen(PORT, () => {

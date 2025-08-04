@@ -26,6 +26,8 @@ export default function MainPage() {
   const selectedGirl = location.state;
 
   const [mainImage, setMainImage] = useState(null);
+  const [mainVideo, setMainVideo] = useState(null);
+
   const [prompt, setPrompt] = useState(
     selectedGirl?.prompt ||
       localStorage.getItem("initialPrompt") ||
@@ -44,7 +46,7 @@ export default function MainPage() {
   const [showBatchPanel, setShowBatchPanel] = useState(false);
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
-
+  
   const [defaultTags, setDefaultTags] = useState(() =>
     localStorage.getItem("defaultTags") || ""
   );
@@ -63,6 +65,15 @@ export default function MainPage() {
     }
   }, [selectedGirl]);
 
+  useEffect(() => {
+    if ((selectedGirl?.image || selectedGirl?.video) && variations.length === 0) {
+      const media = selectedGirl.image || selectedGirl.video;
+      setVariations([media]);
+    }
+  }, [selectedGirl, variations]);
+
+
+
   const handleGenerate = async (type = "image") => {
     console.log("🔹 Get Lucky button clicked. Current prompt:", prompt);
 
@@ -72,6 +83,7 @@ export default function MainPage() {
       return;
     }
 
+    
     const fullPrompt = buildFullPrompt({
       defaultTags,
       prompt,
@@ -144,15 +156,23 @@ export default function MainPage() {
         console.log("🚀 Final Workflow JSON Sent to ComfyUI:", JSON.stringify(workflow, null, 2));
         const foundImage = await sendWorkflowAndPoll(
           workflow,
-          "http://localhost:3001"
+          "https://otf0ftxjotnr7v-3100.proxy.runpod.net"
         );
+        
+        console.log("🎥 Generated Media URL:", foundImage);
 
-        if (foundImage) {
-          setMainImage((prev) => prev || foundImage);
+        if (foundImage.endsWith(".mp4")) {
+          // Replace /view?filename= with /public-output/video/
+          const videoFilename = foundImage.split("filename=")[1];
+          const publicUrl = `https://otf0ftxjotnr7v-3100.proxy.runpod.net/public-output/${videoFilename}`;
+          setMainVideo(publicUrl);
+        } else {
+          setMainImage(foundImage);
           setVariations((prev) => [foundImage, ...prev]);
         }
+
+
       }
-      
 
     } catch (err) {
       console.error("❌ Error in handleGenerate:", err);
@@ -460,24 +480,24 @@ export default function MainPage() {
         {/* Main Image Viewer */}
         <div className="flex-1 flex flex-col items-center justify-start p-0 px-2 relative bg-gray-800 overflow-hidden max-h-screen">
           <div className="w-full max-w-[512px] aspect-[2/3] flex items-center justify-center mt-2">
-            {mainImage &&
-              (mainImage.endsWith(".mp4") ? (
-                <video
-                  src={mainImage}
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <img
-                  src={mainImage}
-                  alt="Selected"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ))}
+            {mainVideo ? (
+              <video
+                src={mainVideo}
+                controls
+                autoPlay
+                loop
+                muted
+                className="w-full h-full object-contain rounded-lg"
+              />
+            ) : mainImage ? (
+              <img
+                src={mainImage}
+                alt="Selected"
+                className="w-full h-full object-contain rounded-lg"
+              />
+            ) : null}
           </div>
+
           <button
             onClick={() => handleGenerate("video")}
             disabled={loading}

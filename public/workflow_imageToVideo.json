@@ -14,7 +14,7 @@
   },
   "69": {
     "inputs": {
-      "filename_prefix": "video/ComfyUI",
+      "filename_prefix": "kissme",
       "format": "auto",
       "codec": "auto",
       "video-preview": "",
@@ -88,7 +88,7 @@
     "inputs": {
       "width": 416,
       "height": 720,
-      "length": 1,
+      "length": 81,
       "batch_size": 1,
       "strength": 1.0000000000000002,
       "positive": [

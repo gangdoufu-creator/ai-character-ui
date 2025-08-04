@@ -1,10 +1,10 @@
 /**
  * Sends the workflow to the backend and polls for the generated output
  * @param {Object} workflow - The full workflow JSON
- * @param {string} serverUrl - The backend server URL (e.g. http://localhost:3001)
+ * @param {string} serverUrl - The backend server URL (e.g. https://<your-runpod-instance>:3100)
  * @returns {string|null} - The final image/video URL or null if not found
  */
-export async function sendWorkflowAndPoll(workflow, serverUrl = "http://localhost:3001") {
+export async function sendWorkflowAndPoll(workflow, serverUrl = "https://f4n5txvlhrhfvn-3100.proxy.runpod.net") {
   // Send workflow
   const res = await fetch(`${serverUrl}/generate-image`, {
     method: "POST",
@@ -20,7 +20,7 @@ export async function sendWorkflowAndPoll(workflow, serverUrl = "http://localhos
 
   // Poll for output
   let foundOutput = null;
-  for (let j = 0; j < 1999; j++) {
+  for (let j = 0; j < 9999; j++) {
     const histRes = await fetch(`${serverUrl}/history/${queue_id}`);
     const histData = await histRes.json();
 
