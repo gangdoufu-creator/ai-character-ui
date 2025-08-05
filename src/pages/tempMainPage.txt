@@ -224,8 +224,6 @@ export default function MainPage() {
           </button>
         </div>
 
-
-
         {showRightPanel && (
           <div className="overflow-y-auto bg-gradient-to-b from-gray-900 to-black w-[15%] min-w-[40px] max-w-[200px] p-2 sm:p-3">
             <div className="flex flex-col items-center space-y-2">

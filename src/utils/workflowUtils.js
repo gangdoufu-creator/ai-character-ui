@@ -4,7 +4,7 @@
  * @param {string} serverUrl - The backend server URL (e.g. https://<your-runpod-instance>:3100)
  * @returns {string|null} - The final image/video URL or null if not found
  */
-export async function sendWorkflowAndPoll(workflow, serverUrl = "https://f4n5txvlhrhfvn-3100.proxy.runpod.net") {
+export async function sendWorkflowAndPoll(workflow, serverUrl = "https://5dznjplhn33wpv-3100.proxy.runpod.net") {
   // Send workflow
   const res = await fetch(`${serverUrl}/generate-image`, {
     method: "POST",

@@ -96,7 +96,7 @@ export const realismSettings = {
     label: "Hentai", 
     pos: ["anime style", "vivid colors", "high contrast"], 
     neg: ["realistic faces", "low detail"], 
-    model: ["abyssorangemix3A0M3_aom3a1b.safetensors"], 
+    model: ["A_2D_abyssorangemix3A0M3_aom3a1b.safetensors"], 
     cfg: 8.5, 
     steps: 28 
   },
@@ -104,7 +104,7 @@ export const realismSettings = {
     label: "Pixar", 
     pos: ["3D render style", "cartoony features", "bright lighting"], 
     neg: ["photo-realism", "gritty"], 
-    model: ["realcartoon3d_v18.safetensors"], 
+    model: ["B_realcartoon3d_v18.safetensors"], 
     cfg: 8, 
     steps: 32 
   },
@@ -112,7 +112,7 @@ export const realismSettings = {
     label: "Mixed", 
     pos: ["blend of anime and realism", "balanced lighting"], 
     neg: ["extreme photo-realism", "overly stylized"], 
-    model: ["animesh_PrunedV22.safetensors"], 
+    model: ["B_animesh_PrunedV22.safetensors"], 
     cfg: 8.5, 
     steps: 32 
   },
@@ -120,7 +120,7 @@ export const realismSettings = {
     label: "Realistic", 
     pos: ["sharp focus", "detailed textures", "cinematic lighting"], 
     neg: ["cartoon style", "overly saturated colors"], 
-    model: ["hellorealistic_V11.safetensors"], 
+    model: ["C_hellorealistic_V11.safetensors"], 
     cfg: 9, 
     steps: 28 
   },
@@ -128,7 +128,7 @@ export const realismSettings = {
     label: "Photographic", 
     pos: ["photographic quality", "lifelike details", "perfect lighting"], 
     neg: ["cartoony features", "stylized look"], 
-    model: ["japaneseStyleRealistic_v20.safetensors"], 
+    model: ["E_japaneseStyleRealistic_v20.safetensors"], 
     cfg: 10, 
     steps: 28 
   }
