@@ -144,12 +144,12 @@ export default function MainPage() {
         }
 
         console.log("🚀 Sending Workflow to ComfyUI...");
-        const foundImage = await sendWorkflowAndPoll(workflow, "https://f794m9d30tj252-3100.proxy.runpod.net");
+        const foundImage = await sendWorkflowAndPoll(workflow, "https://8pyapjjuiy1kkh-3100.proxy.runpod.net");
 
         console.log("🎥 Generated Media URL:", foundImage);
         if (foundImage.endsWith(".mp4")) {
           const videoFilename = foundImage.split("filename=")[1];
-          const publicUrl = `https://f794m9d30tj252-3100.proxy.runpod.net/public-output/${videoFilename}`;
+          const publicUrl = `https://8pyapjjuiy1kkh-3100.proxy.runpod.net/public-output/${videoFilename}`;
           setMainVideo(publicUrl);
           addToGalleryIfUnique({ url: publicUrl, type: "video" });
         } else {

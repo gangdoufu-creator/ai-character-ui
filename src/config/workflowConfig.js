@@ -8,10 +8,10 @@ export const workflowConfigs = {
     filename: "17",
   },
   video: {
-    file: "/workflow_imageToVideo.json",
-    promptNode: "105",
-    negativeNode: "107",
-    seedNode: "108",
-    imageInputNode: "164",
+    file: "/video_wan2_2_14B_i2v.json",
+    promptNode: "6",
+    negativeNode: "7",
+    seedNode: "57",
+    imageInputNode: "62",
   },
 };
